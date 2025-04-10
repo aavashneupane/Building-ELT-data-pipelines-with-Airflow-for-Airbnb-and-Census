@@ -1,0 +1,20 @@
+-- models/datamart/dm_listing_neighbourhood.sql
+{{ config(materialized='view') }}
+
+SELECT
+  {{ ref('fact_listings_metrics') }}."LISTING_NEIGHBOURHOOD",
+  DATE_TRUNC('month', "SCRAPED_DATE") AS "MONTH_YEAR",
+  COUNT(*) FILTER (WHERE "HAS_AVAILABILITY" = 't')::FLOAT / COUNT(*) * 100 AS "ACTIVE_LISTINGS_RATE",
+  MIN("PRICE") AS "MIN_PRICE",
+  MAX("PRICE") AS "MAX_PRICE",
+ (PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY "PRICE")) AS "MEDIAN_PRICE",
+  AVG("PRICE") AS "AVG_PRICE",
+  COUNT(DISTINCT "HOST_ID") AS "NUMBER_OF_DISTINCT_HOSTS",
+  COUNT(DISTINCT "HOST_ID") FILTER (WHERE "HOST_IS_SUPERHOST" = 't')::FLOAT / COUNT(DISTINCT "HOST_ID") * 100 AS "SUPERHOST_RATE",
+  AVG("AVERAGE_RATING") AS "AVG_REVIEW_SCORE",
+  SUM("NUMBER_OF_STAYS") AS "TOTAL_NUMBER_OF_STAYS",
+  SUM("ESTIMATED_REVENUE")::FLOAT / COUNT(*) FILTER (WHERE "HAS_AVAILABILITY" = 't') AS "AVG_ESTIMATED_REVENUE_PER_ACTIVE_LISTING"
+FROM {{ ref('fact_listings_metrics') }}
+JOIN {{ ref('dim_listings') }} ON {{ ref('fact_listings_metrics') }}."LISTING_ID" = {{ ref('dim_listings') }}."LISTING_ID"
+GROUP BY {{ ref('fact_listings_metrics') }}."LISTING_NEIGHBOURHOOD", DATE_TRUNC('month', "SCRAPED_DATE")
+ORDER BY {{ ref('fact_listings_metrics') }}."LISTING_NEIGHBOURHOOD", "MONTH_YEAR"

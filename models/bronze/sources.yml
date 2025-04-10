@@ -1,0 +1,19 @@
+version: 2
+
+sources:
+  - name: airbnb
+    schema: bronze
+    tables:
+      - name: airbnb_raw
+
+  - name: census
+    schema: bronze
+    tables:
+      - name: census_g01_raw
+      - name: census_g02_raw
+
+  - name: nsw
+    schema: bronze
+    tables:
+      - name: nsw_lga_code
+      - name: nsw_lga_suburb
